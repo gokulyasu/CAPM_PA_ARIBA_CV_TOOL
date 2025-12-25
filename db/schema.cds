@@ -49,10 +49,10 @@ entity AuditLogs {
   // attributes              : Composition of many AttributeChange
                               // on attributes.parent = $self;
 
-@cds.persistence.skip
-  startDate : Timestamp;
-  @cds.persistence.skip
-  endDate: Timestamp;
+  virtual startDate : Timestamp @cds.persistence.skip;
+  
+  virtual endDate: Timestamp @cds.persistence.skip;
+  virtual refreshButton: Boolean @cds.persistence.skip;
 }
 
 

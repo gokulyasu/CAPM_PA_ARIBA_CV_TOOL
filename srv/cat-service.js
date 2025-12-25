@@ -8,26 +8,51 @@ const qs = require('qs')
 
 module.exports = cds.service.impl(
     async function (srv) {
-        this.on('GET', 'AuditLogs', async (req, res) => {
-            try {
-                const destination = await getDestination({ destinationName: 'ARIBA_AUDIT_API' })
+        this.on('GET', 'AuditLogss', async (req, res) => {
 
-                const apiKey = destination.originalProperties.destinationConfiguration.APIKey
+            const hasStart = req.query.SELECT.where?.some(e => e.ref?.[0] === 'startDate');
+            const hasEnd = req.query.SELECT.where?.some(e => e.ref?.[0] === 'endDate');
 
-                var url = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=2025-11-01T02:00:00%2B0530&searchEndTime=2025-11-26T02:00:00%2B0530';
+            if (!hasStart || !hasEnd) {
+                req.reject(400, 'Start Date and End Date are mandatory');
+            } else {
+                try {
+                    const destination = await getDestination({ destinationName: 'ARIBA_AUDIT_API' })
 
-                // const token = ;
-                return (await callAribaAuditAPI()).map(toAuditLogsEntity);
+                    const apiKey = destination.originalProperties.destinationConfiguration.APIKey
+                    const startDate = getDateFilter(req, 'startDate');
+                    const endDate = getDateFilter(req, 'endDate');
+                    var tempurl = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=2025-11-01T02:00:00%2B0530&searchEndTime=2025-11-26T02:00:00%2B0530';
+                    var url = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=' + startDate + '&searchEndTime=' + endDate;
+                    const { AuditLogs } = cds.entities('my.bookshop');
+                    const logs = await cds.run(
+                        SELECT.from(AuditLogs)
+                            .where({
+                                createdTime: {
+                                    between: startDate,
+                                    and: endDate
+                                }
+                            }));
+                    var data = (await callAribaAuditAPI()).map(toAuditLogsEntity);
+                    UPSERT.into('AuditLogs').entries(data);
+                    return data;
 
 
-            } catch (error) {
-                console.error(error);
-                req.error(500, 'failed to fetch the employees');
+
+                } catch (error) {
+                    console.error(error);
+                    req.error(500, error);
+                }
             }
+
         });
 
         this.on('syncAuditLogs', async (req, res) => {
             try {
+                const { startDate, endDate } = req.data;
+
+                console.log('Start:', startDate);
+                console.log('End  :', endDate)
                 const destination = await getDestination({ destinationName: 'ARIBA_AUDIT_API' })
 
                 const apiKey = destination.originalProperties.destinationConfiguration.APIKey
@@ -44,6 +69,32 @@ module.exports = cds.service.impl(
                 req.error(500, 'failed to fetch the employees');
             }
         });
+
+        function getDateFilter(req, field) {
+            const where = req.query?.SELECT?.where;
+            if (!where) return null;
+
+            for (let i = 0; i < where.length; i++) {
+                if (where[i].ref?.[0] === field) {
+
+                    // startDate = '2024-01-01'
+                    if (where[i + 1] === '=') {
+                        return where[i + 2].val;
+                    }
+
+                    // startDate >= '2024-01-01'
+                    if (where[i + 1] === '>=') {
+                        return where[i + 2].val;
+                    }
+
+                    // startDate BETWEEN x AND y
+                    if (where[i + 1] === 'between') {
+                        return where[i + 2].val; // lower bound
+                    }
+                }
+            }
+            return null;
+        }
 
         async function getOAuthToken() {
             try {
