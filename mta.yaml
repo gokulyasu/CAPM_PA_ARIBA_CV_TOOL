@@ -1,0 +1,38 @@
+_schema-version: 3.3.0
+ID: pa_ariba_cv_tool
+version: 1.0.0
+
+modules:
+- name: pa_ariba_cv_tool-srv
+  type: nodejs
+  path: gen/srv
+  requires:
+    - name: pa_ariba_cv_tool-db
+    - name: pa_ariba_cv_tool-destination
+  parameters:
+    buildpack: nodejs_buildpack
+    instances: 1
+    memory: 256M
+  build-parameters:
+    builder: npm-ci
+
+- name: pa_ariba_cv_tool-db-deployer
+  type: hdb
+  path: gen/db
+  requires:
+    - name: pa_ariba_cv_tool-db
+  parameters:
+    no-route: true
+
+resources:
+- name: pa_ariba_cv_tool-db
+  type: com.sap.xs.hdi-container
+  parameters:
+    service: hana
+    service-plan: hdi-shared
+
+- name: pa_ariba_cv_tool-destination
+  type: org.cloudfoundry.managed-service
+  parameters:
+    service: destination
+    service-plan: lite

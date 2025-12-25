@@ -1,0 +1,19 @@
+{
+  "xsappname": "pa-ariba-cv-tool",
+  "tenant-mode": "dedicated",
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Display",
+      "description": "Display"
+    }
+  ],
+  "role-templates": [
+    {
+      "name": "Viewer",
+      "description": "Viewer",
+      "scope-references": [
+        "$XSAPPNAME.Display"
+      ]
+    }
+  ]
+}
