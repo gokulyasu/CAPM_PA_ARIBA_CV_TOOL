@@ -17,8 +17,8 @@ module.exports = cds.service.impl(
                 var url = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=2025-11-01T02:00:00%2B0530&searchEndTime=2025-11-26T02:00:00%2B0530';
 
                 // const token = ;
-               return (await callAribaAuditAPI()).map(toAuditLogsEntity);
-            
+                return (await callAribaAuditAPI()).map(toAuditLogsEntity);
+
 
             } catch (error) {
                 console.error(error);
@@ -26,6 +26,24 @@ module.exports = cds.service.impl(
             }
         });
 
+        this.on('syncAuditLogs', async (req, res) => {
+            try {
+                const destination = await getDestination({ destinationName: 'ARIBA_AUDIT_API' })
+
+                const apiKey = destination.originalProperties.destinationConfiguration.APIKey
+
+                var url = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=2025-11-01T02:00:00%2B0530&searchEndTime=2025-11-26T02:00:00%2B0530';
+
+                // const token = ;
+                req.info('Data refreshed');
+                return (await callAribaAuditAPI()).map(toAuditLogsEntity);
+
+
+            } catch (error) {
+                console.error(error);
+                req.error(500, 'failed to fetch the employees');
+            }
+        });
 
         async function getOAuthToken() {
             try {
@@ -140,7 +158,7 @@ module.exports = cds.service.impl(
                 notes: item.notes,
                 status: item.status,
                 createdTime: createdDate,
-purposeOfAudit: item.purposeOfAudit,
+                purposeOfAudit: item.purposeOfAudit,
                 paramMap1: pm1,
                 paramMap2: pm2,
                 paramMap3: pm3,
@@ -148,7 +166,7 @@ purposeOfAudit: item.purposeOfAudit,
                 resourceName,
                 resourceId,
 
-  
+
             };
         }
 

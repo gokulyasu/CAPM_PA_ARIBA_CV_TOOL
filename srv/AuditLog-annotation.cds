@@ -21,7 +21,13 @@ annotate my.AuditLogs with @(
         {
             Value: purposeOfAudit,
             Label: 'Description'
-        }
+        },
+        {
+      $Type           : 'UI.DataFieldForAction',
+      Action          : 'CatalogService.EntityContainer/syncAuditLogs',
+      Label           : 'Purge Audits',
+      RequiresContext : false                
+    }
     ],
     UI.SelectionFields: [startDate,endDate]
 );
