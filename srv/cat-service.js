@@ -22,20 +22,30 @@ module.exports = cds.service.impl(
                     const apiKey = destination.originalProperties.destinationConfiguration.APIKey
                     const startDate = getDateFilter(req, 'startDate');
                     const endDate = getDateFilter(req, 'endDate');
+                    const refresh = getDateFilter(req, 'refreshButton');
                     var tempurl = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=2025-11-01T02:00:00%2B0530&searchEndTime=2025-11-26T02:00:00%2B0530';
                     var url = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=' + startDate + '&searchEndTime=' + endDate;
-                    const { AuditLogs } = cds.entities('my.bookshop');
-                    const logs = await cds.run(
-                        SELECT.from(AuditLogs)
-                            .where({
-                                createdTime: {
-                                    between: startDate,
-                                    and: endDate
-                                }
-                            }));
-                    var data = (await callAribaAuditAPI()).map(toAuditLogsEntity);
-                    UPSERT.into('AuditLogs').entries(data);
-                    return data;
+                    const { AuditLogs } = cds.entities('my.cvtool');
+                    const tx = cds.transaction(req);
+                    var logs = [];
+                    if (!refresh) {
+                        logs = await cds.run(
+                            SELECT.from(AuditLogs)
+                                .where({
+                                    createdTime: {
+                                        between: startDate,
+                                        and: endDate
+                                    }
+                                }));
+                    }
+                    if (logs.length == 0) {
+                        var logs = (await callAribaAuditAPI()).map(toAuditLogsEntity);
+                        await tx.run(
+                            UPSERT.into(AuditLogs).entries(logs)
+                        );
+                      
+                    }
+                    return logs;
 
 
 

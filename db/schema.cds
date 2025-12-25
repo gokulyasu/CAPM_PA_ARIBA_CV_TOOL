@@ -1,4 +1,4 @@
-namespace my.bookshop;
+namespace my.cvtool;
 
 // entity Books {
 //   key ID    : Integer;
@@ -52,7 +52,7 @@ entity AuditLogs {
   virtual startDate : Timestamp @cds.persistence.skip;
   
   virtual endDate: Timestamp @cds.persistence.skip;
-  virtual refreshButton: Boolean @cds.persistence.skip;
+  virtual refreshButton: Boolean default true  @cds.persistence.skip;
 }
 
 

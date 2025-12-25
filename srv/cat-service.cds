@@ -1,4 +1,4 @@
-using my.bookshop as my from '../db/schema';
+using my.cvtool as my from '../db/schema';
 
 service CatalogService {
     //  entity  logs as projection on my.logs;

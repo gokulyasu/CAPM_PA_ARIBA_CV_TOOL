@@ -47,21 +47,16 @@ annotate my.AuditLogs with @(
     UI.SelectionFields: [
       
        startDate,endDate,refreshButton],
-    Common.FieldControl : #Mandatory
-);
 
 
-annotate my.AuditLogs.refreshButton with @(
-  UI.Hidden : false,
-
-  Common.ValueListWithFixedValues : false,
-
+Common.FieldControl : #Mandatory,
   Capabilities.FilterRestrictions : {
     FilterExpressionRestrictions : [
-      {
-        Property : refreshButton,
-        AllowedExpressions : 'SingleValue'
-      }
+      { Property: startDate, AllowedExpressions: 'SingleValue' },
+      { Property: endDate, AllowedExpressions: 'SingleValue' }, { Property: refreshButton, AllowedExpressions: 'SingleValue' }
     ]
   }
+
 );
+
+
