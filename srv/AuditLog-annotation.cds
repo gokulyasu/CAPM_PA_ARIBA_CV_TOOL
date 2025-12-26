@@ -2,61 +2,57 @@ using CatalogService as my from './cat-service';
 
 annotate my.AuditLogs with @(
 
-  
-    UI.LineItem       : [
-        {
-            Value: createdTime,
-            Label: 'Created At'
-        },
-        {
-            Value: realUser,
-            Label: 'User'
-        },
-        {
-            Value: action,
-            Label: 'Action'
-        },
-        {
-            Value: auditType,
-            Label: 'Action Type'
-        },
-        {
-            Value: purposeOfAudit,
-            Label: 'Description'
-        },
-        {
-      $Type           : 'UI.DataFieldForAction',
-      Action          : 'CatalogService.EntityContainer/syncAuditLogs',
-      Label           : 'Purge Audits',
-      RequiresContext : false          ,
-      Parameters: [
+  UI.LineItem                    : [
+    {
+      Value: createdTime,
+      Label: 'Created At'
+    },
+    {
+      Value: realUser,
+      Label: 'User'
+    },
+    {
+      Value: action,
+      Label: 'Action'
+    },
+    {
+      Value: auditType,
+      Label: 'Action Type'
+    },
+    {
+      Value: purposeOfAudit,
+      Label: 'Description'
+    },
+    {
+      $Type          : 'UI.DataFieldForAction',
+      Action         : 'CatalogService.EntityContainer/syncAuditLogs',
+      Label          : 'Purge Audits',
+      RequiresContext: false,
+      Parameters     : [
         {
           $Type: 'UI.Parameter',
-          Name: 'startDate',
+          Name : 'startDate',
           Value: startDate
         },
         {
           $Type: 'UI.Parameter',
-          Name: 'endDate',
+          Name : 'endDate',
           Value: endDate
         }
-      ]      
+      ]
     }
-    ],
-    
-    UI.SelectionFields: [
-      
-       startDate,endDate,refreshButton],
+  ],
+
+  UI.SelectionFields             : [createdTime],
+
+  Common.FieldControl            : #Mandatory,
+  Capabilities.FilterRestrictions: {FilterExpressionRestrictions: [{
+    Property          : createdTime,
+    AllowedExpressions: 'SingleValue'
+  }]
+  },
+  Capabilities.SearchRestrictions.Searchable: false,
 
 
-Common.FieldControl : #Mandatory,
-  Capabilities.FilterRestrictions : {
-    FilterExpressionRestrictions : [
-      { Property: startDate, AllowedExpressions: 'SingleValue' },
-      { Property: endDate, AllowedExpressions: 'SingleValue' }, { Property: refreshButton, AllowedExpressions: 'SingleValue' }
-    ]
-  }
 
 );
-
-

@@ -43,7 +43,7 @@ module.exports = cds.service.impl(
                         await tx.run(
                             UPSERT.into(AuditLogs).entries(logs)
                         );
-                      
+
                     }
                     return logs;
 
@@ -57,55 +57,57 @@ module.exports = cds.service.impl(
 
         });
 
+
         this.on('syncAuditLogs', async (req, res) => {
-            try {
-                const { startDate, endDate } = req.data;
 
-                console.log('Start:', startDate);
-                console.log('End  :', endDate)
-                const destination = await getDestination({ destinationName: 'ARIBA_AUDIT_API' })
+            const startDate = req.data.startDate;
+            const endDate = req.data.endDate;
 
-                const apiKey = destination.originalProperties.destinationConfiguration.APIKey
+            if (!startDate || !endDate) {
+                req.reject(400, 'Start Date and End Date are mandatory');
+            } else {
+                try {
+                    const destination = await getDestination({ destinationName: 'ARIBA_AUDIT_API' })
 
-                var url = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=2025-11-01T02:00:00%2B0530&searchEndTime=2025-11-26T02:00:00%2B0530';
+                    const apiKey = destination.originalProperties.destinationConfiguration.APIKey
 
-                // const token = ;
-                req.info('Data refreshed');
-                return (await callAribaAuditAPI()).map(toAuditLogsEntity);
+                    var url = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=' + encodeURIComponent(dataFormatter(new Date((startDate)))) + '&searchEndTime=' + encodeURIComponent(dataFormatter(new Date(endDate)));
+                    const { AuditLogs } = cds.entities('my.cvtool');
+                    const tx = cds.transaction(req);
 
 
-            } catch (error) {
-                console.error(error);
-                req.error(500, 'failed to fetch the employees');
-            }
-        });
+                    var logs = (await callAribaAuditAPI(url)).map(toAuditLogsEntity);
+                    await tx.run(
+                        UPSERT.into(AuditLogs).entries(logs)
+                    );
+                    return logs;
 
-        function getDateFilter(req, field) {
-            const where = req.query?.SELECT?.where;
-            if (!where) return null;
-
-            for (let i = 0; i < where.length; i++) {
-                if (where[i].ref?.[0] === field) {
-
-                    // startDate = '2024-01-01'
-                    if (where[i + 1] === '=') {
-                        return where[i + 2].val;
-                    }
-
-                    // startDate >= '2024-01-01'
-                    if (where[i + 1] === '>=') {
-                        return where[i + 2].val;
-                    }
-
-                    // startDate BETWEEN x AND y
-                    if (where[i + 1] === 'between') {
-                        return where[i + 2].val; // lower bound
-                    }
+                } catch (error) {
+                    console.error(error);
+                    req.error(500, error);
                 }
             }
-            return null;
-        }
 
+        });
+
+
+        function dataFormatter(date) {
+            const pad = (n) => String(n).padStart(2, '0');
+
+            const yyyy = date.getFullYear();
+            const MM = pad(date.getMonth() + 1);
+            const dd = pad(date.getDate());
+            const HH = pad(date.getHours());
+            const mm = pad(date.getMinutes());
+            const ss = pad(date.getSeconds());
+
+            const offset = -date.getTimezoneOffset();
+            const sign = offset >= 0 ? '+' : '-';
+            const hh = pad(Math.floor(Math.abs(offset) / 60));
+            const mi = pad(Math.abs(offset) % 60);
+
+            return `${yyyy}-${MM}-${dd}T${HH}:${mm}:${ss}${sign}${hh}${mi}`;
+        }
         async function getOAuthToken() {
             try {
                 const destination = await getDestination({ destinationName: 'ARIBA_AUDIT_API' });
@@ -139,14 +141,14 @@ module.exports = cds.service.impl(
             }
         }
 
-        async function callAribaAuditAPI() {
+        async function callAribaAuditAPI(url) {
             const destination = await getDestination({ destinationName: 'ARIBA_AUDIT_API' })
             const API_KEY = destination.originalProperties.destinationConfiguration.APIKey;
             const token = await getOAuthToken()
             const base_url = destination.originalProperties.destinationConfiguration.URL;
             const search_url = '/api/audit-search/v2/prod/audits?tenantId=InfosysDSAPP-T&auditType=ConfigurationModification&documentType=ariba.collaborate.contracts.contractworkspace&searchStartTime=2025-11-01T02:00:00%2B0530&searchEndTime=2025-11-26T02:00:00%2B0530';
             const API_URL =
-                base_url + search_url;
+                base_url + url;
             try {
                 const response = await axios.get(API_URL, {
                     headers: {
